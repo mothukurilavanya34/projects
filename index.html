@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Smart Comment System</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:linear-gradient(135deg,#667eea,#764ba2);
+margin:0;
+padding:0;
+}
+
+.container{
+width:550px;
+margin:50px auto;
+background:white;
+padding:25px;
+border-radius:12px;
+box-shadow:0 8px 20px rgba(0,0,0,0.2);
+}
+
+h2{
+text-align:center;
+color:#333;
+}
+
+input,textarea,select{
+width:100%;
+padding:10px;
+margin-top:10px;
+border-radius:6px;
+border:1px solid #ccc;
+}
+
+textarea{
+height:80px;
+}
+
+button{
+border:none;
+padding:8px 12px;
+border-radius:6px;
+cursor:pointer;
+font-size:14px;
+transition:0.3s;
+}
+
+.post{
+background:#4CAF50;
+color:white;
+width:100%;
+margin-top:10px;
+}
+
+.post:hover{
+background:#3e8e41;
+}
+
+.comment{
+background:#f4f6ff;
+padding:15px;
+margin-top:15px;
+border-radius:10px;
+animation:fadeIn 0.5s;
+}
+
+.city{
+color:#764ba2;
+font-weight:bold;
+}
+
+.actions{
+margin-top:10px;
+}
+
+.like{
+background:#2ecc71;
+color:white;
+}
+
+.dislike{
+background:#e74c3c;
+color:white;
+}
+
+.translate{
+background:#f39c12;
+color:white;
+}
+
+.actions span{
+margin-right:10px;
+font-weight:bold;
+}
+
+button:hover{
+transform:scale(1.05);
+}
+
+@keyframes fadeIn{
+from{opacity:0;transform:translateY(10px);}
+to{opacity:1;transform:translateY(0);}
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>💬 Smart Comment Section</h2>
+
+<input id="city" placeholder="Enter your city">
+
+<textarea id="comment" placeholder="Write your comment"></textarea>
+
+<select id="language">
+<option value="en">Translate to English</option>
+<option value="hi">Translate to Hindi</option>
+<option value="te">Translate to Telugu</option>
+<option value="fr">Translate to French</option>
+<option value="es">Translate to Spanish</option>
+</select>
+
+<button class="post" onclick="addComment()">Post Comment</button>
+
+<div id="commentList"></div>
+
+</div>
+
+<script>
+
+function addComment(){
+
+let city=document.getElementById("city").value;
+let text=document.getElementById("comment").value;
+
+let special=/[!@#$%^&*(),.?":{}|<>]/;
+
+if(special.test(text)){
+alert("❌ Special characters are not allowed");
+return;
+}
+
+if(city=="" || text==""){
+alert("Please fill all fields");
+return;
+}
+
+let div=document.createElement("div");
+div.className="comment";
+
+div.innerHTML=`
+
+<p class="city">📍 ${city}</p>
+
+<p class="text">${text}</p>
+
+<div class="actions">
+
+<button class="like" onclick="likeComment(this)">👍</button>
+<span>0</span>
+
+<button class="dislike" onclick="dislikeComment(this)">👎</button>
+<span>0</span>
+
+<button class="translate" onclick="translateComment(this)">🌍 Translate</button>
+
+</div>
+
+`;
+
+document.getElementById("commentList").appendChild(div);
+
+document.getElementById("comment").value="";
+
+}
+
+function likeComment(btn){
+
+let count=btn.nextElementSibling;
+
+count.innerText=parseInt(count.innerText)+1;
+
+}
+
+function dislikeComment(btn){
+
+let count=btn.nextElementSibling;
+
+let dislikes=parseInt(count.innerText)+1;
+
+count.innerText=dislikes;
+
+if(dislikes>=2){
+
+alert("⚠ Comment removed due to 2 dislikes");
+
+btn.closest(".comment").remove();
+
+}
+
+}
+
+function translateComment(btn){
+
+let text=btn.closest(".comment").querySelector(".text").innerText;
+
+let lang=document.getElementById("language").value;
+
+let url="https://translate.google.com/?sl=auto&tl="+lang+"&text="+encodeURIComponent(text);
+
+window.open(url);
+
+}
+
+</script>
+
+</body>
+
+</html>
