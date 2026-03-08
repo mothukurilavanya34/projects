@@ -2,146 +2,127 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Task 4 - Dynamic Theme & OTP</title>
+<title>Task 5 - Gesture Video Player</title>
 <style>
     body {
+        margin: 0;
         font-family: Arial, sans-serif;
-        transition: all 0.5s ease;
-        padding: 20px;
-        text-align: center;
-    }
-
-    h2 {
-        margin-bottom: 20px;
-    }
-
-    .login-box {
-        background: rgba(255,255,255,0.1);
-        padding: 20px;
-        border-radius: 10px;
-        display: inline-block;
-    }
-
-    input, select, button {
-        padding: 10px;
-        margin: 10px 0;
-        width: 250px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-    }
-
-    button {
-        width: 270px;
-        cursor: pointer;
-        background: #007bff;
+        background: #111;
         color: white;
-        border: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
     }
 
-    button:hover {
-        background: #0056b3;
+    #videoContainer {
+        position: relative;
+        width: 80%;
+        max-width: 800px;
     }
 
-    #otpSection {
+    video {
+        width: 100%;
+        border-radius: 10px;
+        background: black;
+    }
+
+    #commentsSection {
         display: none;
-        margin-top: 20px;
+        background: #222;
+        width: 80%;
+        max-width: 800px;
+        margin-top: 10px;
+        padding: 15px;
+        border-radius: 8px;
+    }
+
+    #commentsSection h3 {
+        margin-top: 0;
+    }
+
+    .video-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
     }
 </style>
 </head>
 <body>
 
-<h2>🌐 Dynamic Theme & Regional OTP</h2>
+<h2>🎥 Custom Gesture Video Player</h2>
 
-<div class="login-box">
-    <label for="state">Select Your State:</label><br>
-    <select id="state">
-        <option value="">--Select State--</option>
-        <option value="Tamil Nadu">Tamil Nadu</option>
-        <option value="Kerala">Kerala</option>
-        <option value="Karnataka">Karnataka</option>
-        <option value="Andhra Pradesh">Andhra Pradesh</option>
-        <option value="Telangana">Telangana</option>
-        <option value="Maharashtra">Maharashtra</option>
-        <option value="Delhi">Delhi</option>
-        <option value="Other">Other</option>
-    </select><br>
+<div id="videoContainer">
+    <video id="videoPlayer">
+        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+        Your browser does not support HTML5 video.
+    </video>
+    <div class="video-overlay" id="overlay"></div>
+</div>
 
-    <label for="contact">Enter Email or Mobile:</label><br>
-    <input type="text" id="contact" placeholder="Email or Mobile"><br>
-
-    <button onclick="login()">Login</button>
-
-    <div id="otpSection">
-        <input type="text" id="otpInput" placeholder="Enter OTP"><br>
-        <button onclick="verifyOTP()">Verify OTP</button>
-    </div>
+<div id="commentsSection">
+    <h3>💬 Comments</h3>
+    <p>This is the comment section. It opens on triple-tap left.</p>
 </div>
 
 <script>
-// Southern states list
-const southStates = ["Tamil Nadu", "Kerala", "Karnataka", "Andhra Pradesh", "Telangana"];
-let generatedOTP = "";
+const video = document.getElementById("videoPlayer");
+const overlay = document.getElementById("overlay");
+const comments = document.getElementById("commentsSection");
 
-// --- Dynamic Theme ---
-function applyTheme() {
-    const state = document.getElementById("state").value;
-    const now = new Date();
+let tapCount = 0;
+let tapTimer = null;
 
-    // IST offset = UTC+5:30 → convert user local time if needed
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
+// Gesture handler
+overlay.addEventListener("click", function(event){
+    const rect = overlay.getBoundingClientRect();
+    const x = event.clientX - rect.left; // X relative to video
+    const width = rect.width;
+    const y = event.clientY - rect.top; // Y relative to video
 
-    const isSouth = southStates.includes(state);
-    const isMorning = (hours >= 10 && hours < 12);
+    tapCount++;
 
-    if(isSouth && isMorning){
-        // Light theme
-        document.body.style.background = "white";
-        document.body.style.color = "black";
-    } else {
-        // Dark theme
-        document.body.style.background = "#111";
-        document.body.style.color = "white";
-    }
-}
+    if(tapTimer) clearTimeout(tapTimer);
 
-// --- Login & OTP ---
-function login(){
-    const state = document.getElementById("state").value;
-    const contact = document.getElementById("contact").value.trim();
-
-    if(state === "" || contact === ""){
-        alert("Please select state and enter email/mobile!");
-        return;
-    }
-
-    applyTheme();
-
-    // Generate 4-digit OTP
-    generatedOTP = Math.floor(1000 + Math.random() * 9000).toString();
-
-    if(southStates.includes(state)){
-        alert(`OTP sent to your EMAIL: ${generatedOTP}`);
-    } else {
-        alert(`OTP sent to your MOBILE: ${generatedOTP}`);
-    }
-
-    document.getElementById("otpSection").style.display = "block";
-}
-
-// --- Verify OTP ---
-function verifyOTP(){
-    const userOTP = document.getElementById("otpInput").value.trim();
-    if(userOTP === generatedOTP){
-        alert("✅ Login successful!");
-        document.getElementById("otpSection").style.display = "none";
-    } else {
-        alert("❌ Incorrect OTP. Try again!");
-    }
-}
-
-// Optional: Update theme if state changes before login
-document.getElementById("state").addEventListener("change", applyTheme);
+    tapTimer = setTimeout(()=>{
+        // Determine tap type
+        if(tapCount === 1){
+            // Single tap center
+            if(x > width*0.33 && x < width*0.66){
+                if(video.paused) video.play();
+                else video.pause();
+            }
+        }
+        else if(tapCount === 2){
+            // Double tap left/right
+            if(x < width/2){
+                video.currentTime = Math.max(video.currentTime - 10, 0);
+            } else {
+                video.currentTime = Math.min(video.currentTime + 10, video.duration);
+            }
+        }
+        else if(tapCount === 3){
+            // Triple tap
+            if(x < width/3){
+                // Left → show comments
+                comments.style.display = comments.style.display === "none" ? "block" : "none";
+            } else if(x > width*2/3){
+                // Right → close window
+                alert("Closing website (simulate)");
+                // window.close(); // works only if window opened via JS
+            } else {
+                // Center → next video
+                video.currentTime = 0; // reset current video
+                alert("Skipped to next video (simulate)");
+            }
+        }
+        tapCount = 0;
+    }, 300); // 300ms threshold to detect multi-taps
+});
 
 </script>
 
