@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Video Platform</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            margin: 20px;
+        }
+
+        h1, h2 {
+            color: #333;
+        }
+
+        .video-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .video-card {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            padding: 15px;
+            flex: 1 1 300px;
+        }
+
+        video {
+            width: 100%;
+            border-radius: 8px;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #3399cc;
+            color: white;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background-color: #2277aa;
+        }
+
+        #downloadsList li {
+            margin: 5px 0;
+        }
+
+        .premium-button {
+            background-color: #28a745;
+        }
+
+        .premium-button:hover {
+            background-color: #218838;
+        }
+
+        .clear-button {
+            background-color: #dc3545;
+            margin-top: 10px;
+        }
+
+        .clear-button:hover {
+            background-color: #c82333;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            background-color: gold;
+            color: black;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Video Platform <span id="premiumBadge" class="badge" style="display:none;">Premium</span></h1>
+
+<!-- Video Section -->
+<div class="video-grid">
+    <div class="video-card">
+        <video id="video1" controls>
+            <source src="video1.mp4" type="video/mp4">
+            Your browser does not support HTML5 video.
+        </video>
+        <br>
+        <button onclick="downloadVideo('video1.mp4')">Download Video 1</button>
+    </div>
+
+    <div class="video-card">
+        <video id="video2" controls>
+            <source src="video2.mp4" type="video/mp4">
+            Your browser does not support HTML5 video.
+        </video>
+        <br>
+        <button onclick="downloadVideo('video2.mp4')">Download Video 2</button>
+    </div>
+
+    <div class="video-card">
+        <video id="video3" controls>
+            <source src="video3.mp4" type="video/mp4">
+            Your browser does not support HTML5 video.
+        </video>
+        <br>
+        <button onclick="downloadVideo('video3.mp4')">Download Video 3</button>
+    </div>
+</div>
+
+<!-- Premium Upgrade -->
+<button class="premium-button" onclick="buyPremium()">Upgrade to Premium</button>
+
+<hr>
+
+<!-- Profile Downloads Section -->
+<h2>My Downloads</h2>
+<ul id="downloadsList"></ul>
+<button class="clear-button" onclick="clearDownloads()">Clear All Downloads</button>
+
+<!-- Razorpay Script -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+// --- Download Function ---
+function downloadVideo(videoName){
+    let premium = localStorage.getItem("premiumUser");
+
+    // Premium users: unlimited
+    if(premium === "true"){
+        triggerDownload(videoName);
+        addToDownloads(videoName);
+        alert("Download started!");
+        return;
+    }
+
+    // Free users: 1 download per day
+    let today = new Date().toDateString();
+    let lastDownload = localStorage.getItem("downloadDate");
+    let count = parseInt(localStorage.getItem("downloadCount") || 0);
+
+    if(lastDownload === today && count >= 1){
+        alert("Free users can download only 1 video per day. Upgrade to Premium for unlimited downloads!");
+        return;
+    }
+
+    // Update count
+    if(lastDownload === today){
+        localStorage.setItem("downloadCount", count + 1);
+    } else {
+        localStorage.setItem("downloadDate", today);
+        localStorage.setItem("downloadCount", 1);
+    }
+
+    triggerDownload(videoName);
+    addToDownloads(videoName);
+    alert("Download started!");
+}
+
+// --- Trigger actual download ---
+function triggerDownload(videoName){
+    const link = document.createElement("a");
+    link.href = videoName;
+    link.download = videoName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// --- Add downloaded video to profile ---
+function addToDownloads(videoName){
+    let downloads = JSON.parse(localStorage.getItem("downloads")) || [];
+    if(!downloads.includes(videoName)){
+        downloads.push(videoName);
+        localStorage.setItem("downloads", JSON.stringify(downloads));
+    }
+    displayDownloads();
+}
+
+// --- Display downloads in profile ---
+function displayDownloads(){
+    let downloads = JSON.parse(localStorage.getItem("downloads")) || [];
+    let list = document.getElementById("downloadsList");
+    list.innerHTML = "";
+    downloads.forEach(function(video){
+        let li = document.createElement("li");
+        li.textContent = video + " ";
+        let link = document.createElement("a");
+        link.href = video;
+        link.download = video;
+        link.textContent = "[Download Again]";
+        li.appendChild(link);
+        list.appendChild(li);
+    });
+
+    // Show Premium badge if user is premium
+    let premium = localStorage.getItem("premiumUser");
+    document.getElementById("premiumBadge").style.display = premium === "true" ? "inline-block" : "none";
+}
+
+// --- Razorpay Payment for Premium ---
+function buyPremium(){
+    var options = {
+        "key": "rzp_test_1234567890abcdef", // Replace with your Razorpay Test Key
+        "amount": "50000", // 500 INR in paise
+        "currency": "INR",
+        "name": "Video Platform Premium",
+        "description": "Upgrade to Premium for unlimited downloads",
+        "handler": function (response){
+            localStorage.setItem("premiumUser","true");
+            alert("Payment successful! You are now a Premium user. Enjoy unlimited downloads.");
+            displayDownloads();
+        },
+        "theme": {
+            "color": "#3399cc"
+        }
+    };
+    var rzp = new Razorpay(options);
+    rzp.open();
+}
+
+// --- Clear All Downloads ---
+function clearDownloads() {
+    localStorage.removeItem("downloads");
+    localStorage.removeItem("downloadCount");
+    localStorage.removeItem("downloadDate");
+    displayDownloads();
+    alert("All downloads cleared! You can start fresh now.");
+}
+
+// --- Load downloads on page load ---
+window.onload = function(){
+    displayDownloads();
+}
+</script>
+
+</body>
+</html>
