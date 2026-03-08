@@ -1,107 +1,51 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<title>Smart Comment System</title>
+<title>Video Plan Upgrade</title>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <style>
 
 body{
 font-family:Arial;
-background:linear-gradient(135deg,#667eea,#764ba2);
-margin:0;
-padding:0;
+background:#f0f0f0;
+padding:20px;
+text-align:center;
 }
 
 .container{
-width:550px;
-margin:50px auto;
 background:white;
-padding:25px;
-border-radius:12px;
-box-shadow:0 8px 20px rgba(0,0,0,0.2);
+padding:20px;
+border-radius:10px;
+max-width:800px;
+margin:auto;
 }
 
-h2{
-text-align:center;
-color:#333;
-}
-
-input,textarea,select{
-width:100%;
-padding:10px;
-margin-top:10px;
-border-radius:6px;
-border:1px solid #ccc;
-}
-
-textarea{
-height:80px;
+.plan{
+border:1px solid #ddd;
+padding:15px;
+margin:10px;
+border-radius:10px;
 }
 
 button{
+padding:10px 20px;
+background:#007bff;
+color:white;
 border:none;
-padding:8px 12px;
-border-radius:6px;
+border-radius:5px;
 cursor:pointer;
-font-size:14px;
-transition:0.3s;
-}
-
-.post{
-background:#4CAF50;
-color:white;
-width:100%;
-margin-top:10px;
-}
-
-.post:hover{
-background:#3e8e41;
-}
-
-.comment{
-background:#f4f6ff;
-padding:15px;
-margin-top:15px;
-border-radius:10px;
-animation:fadeIn 0.5s;
-}
-
-.city{
-color:#764ba2;
-font-weight:bold;
-}
-
-.actions{
-margin-top:10px;
-}
-
-.like{
-background:#2ecc71;
-color:white;
-}
-
-.dislike{
-background:#e74c3c;
-color:white;
-}
-
-.translate{
-background:#f39c12;
-color:white;
-}
-
-.actions span{
-margin-right:10px;
-font-weight:bold;
 }
 
 button:hover{
-transform:scale(1.05);
+background:#0056b3;
 }
 
-@keyframes fadeIn{
-from{opacity:0;transform:translateY(10px);}
-to{opacity:1;transform:translateY(0);}
+video{
+width:100%;
+margin-top:20px;
 }
 
 </style>
@@ -112,109 +56,107 @@ to{opacity:1;transform:translateY(0);}
 
 <div class="container">
 
-<h2>💬 Smart Comment Section</h2>
+<h2>🎬 Video Platform</h2>
 
-<input id="city" placeholder="Enter your city">
+<h3>Current Plan: <span id="planName">Free</span></h3>
 
-<textarea id="comment" placeholder="Write your comment"></textarea>
+<div class="plan">
+<h3>Free Plan</h3>
+<p>Watch videos for 5 minutes</p>
+</div>
 
-<select id="language">
-<option value="en">Translate to English</option>
-<option value="hi">Translate to Hindi</option>
-<option value="te">Translate to Telugu</option>
-<option value="fr">Translate to French</option>
-<option value="es">Translate to Spanish</option>
-</select>
+<div class="plan">
+<h3>Bronze Plan - ₹10</h3>
+<p>Watch videos for 7 minutes</p>
+<button onclick="buyPlan('Bronze',10,7)">Upgrade</button>
+</div>
 
-<button class="post" onclick="addComment()">Post Comment</button>
+<div class="plan">
+<h3>Silver Plan - ₹50</h3>
+<p>Watch videos for 10 minutes</p>
+<button onclick="buyPlan('Silver',50,10)">Upgrade</button>
+</div>
 
-<div id="commentList"></div>
+<div class="plan">
+<h3>Gold Plan - ₹100</h3>
+<p>Unlimited watching</p>
+<button onclick="buyPlan('Gold',100,'unlimited')">Upgrade</button>
+</div>
+
+<h2>Watch Video</h2>
+
+<video id="videoPlayer" controls>
+
+<source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+
+</video>
 
 </div>
 
 <script>
 
-function addComment(){
+let plan = localStorage.getItem("userPlan") || "Free"
+document.getElementById("planName").innerText = plan
 
-let city=document.getElementById("city").value;
-let text=document.getElementById("comment").value;
-
-let special=/[!@#$%^&*(),.?":{}|<>]/;
-
-if(special.test(text)){
-alert("❌ Special characters are not allowed");
-return;
+let limits = {
+"Free":5,
+"Bronze":7,
+"Silver":10,
+"Gold":"unlimited"
 }
 
-if(city=="" || text==""){
-alert("Please fill all fields");
-return;
-}
+let video = document.getElementById("videoPlayer")
 
-let div=document.createElement("div");
-div.className="comment";
+video.addEventListener("timeupdate",function(){
 
-div.innerHTML=`
+let currentPlan = localStorage.getItem("userPlan") || "Free"
+let limit = limits[currentPlan]
 
-<p class="city">📍 ${city}</p>
+if(limit !== "unlimited"){
 
-<p class="text">${text}</p>
+if(video.currentTime >= limit * 60){
 
-<div class="actions">
+video.pause()
 
-<button class="like" onclick="likeComment(this)">👍</button>
-<span>0</span>
-
-<button class="dislike" onclick="dislikeComment(this)">👎</button>
-<span>0</span>
-
-<button class="translate" onclick="translateComment(this)">🌍 Translate</button>
-
-</div>
-
-`;
-
-document.getElementById("commentList").appendChild(div);
-
-document.getElementById("comment").value="";
-
-}
-
-function likeComment(btn){
-
-let count=btn.nextElementSibling;
-
-count.innerText=parseInt(count.innerText)+1;
-
-}
-
-function dislikeComment(btn){
-
-let count=btn.nextElementSibling;
-
-let dislikes=parseInt(count.innerText)+1;
-
-count.innerText=dislikes;
-
-if(dislikes>=2){
-
-alert("⚠ Comment removed due to 2 dislikes");
-
-btn.closest(".comment").remove();
+alert("Your watching limit is over. Upgrade your plan.")
 
 }
 
 }
 
-function translateComment(btn){
+})
 
-let text=btn.closest(".comment").querySelector(".text").innerText;
+function buyPlan(planName,price,limit){
 
-let lang=document.getElementById("language").value;
+var options = {
 
-let url="https://translate.google.com/?sl=auto&tl="+lang+"&text="+encodeURIComponent(text);
+"key":"rzp_test_123456789",
 
-window.open(url);
+"amount":price * 100,
+
+"currency":"INR",
+
+"name":"Video Platform",
+
+"description":planName + " Plan",
+
+handler:function(response){
+
+localStorage.setItem("userPlan",planName)
+
+alert("Payment Successful!")
+
+alert("Invoice sent to your email for "+planName+" Plan")
+
+location.reload()
+
+}
+
+}
+
+var rzp1 = new Razorpay(options)
+
+rzp1.open()
 
 }
 
