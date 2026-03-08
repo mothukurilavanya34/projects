@@ -2,128 +2,171 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Task 5 - Gesture Video Player</title>
+<title>Task 6 - Video Call + Screen Share + Recording</title>
 <style>
     body {
-        margin: 0;
         font-family: Arial, sans-serif;
-        background: #111;
+        background: #222;
         color: white;
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        height: 100vh;
+        padding: 20px;
     }
 
-    #videoContainer {
-        position: relative;
-        width: 80%;
-        max-width: 800px;
+    h2 {
+        margin-bottom: 20px;
     }
 
     video {
-        width: 100%;
-        border-radius: 10px;
+        width: 400px;
+        height: 250px;
         background: black;
-    }
-
-    #commentsSection {
-        display: none;
-        background: #222;
-        width: 80%;
-        max-width: 800px;
-        margin-top: 10px;
-        padding: 15px;
+        margin: 10px;
         border-radius: 8px;
     }
 
-    #commentsSection h3 {
-        margin-top: 0;
+    .controls {
+        margin: 20px;
     }
 
-    .video-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
+    button {
+        padding: 10px 15px;
+        margin: 5px;
+        border: none;
+        border-radius: 5px;
+        background-color: #007bff;
+        color: white;
         cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #0056b3;
     }
 </style>
 </head>
 <body>
 
-<h2>🎥 Custom Gesture Video Player</h2>
+<h2>📹 Video Call + Screen Share + Recording</h2>
 
-<div id="videoContainer">
-    <video id="videoPlayer">
-        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
-        Your browser does not support HTML5 video.
-    </video>
-    <div class="video-overlay" id="overlay"></div>
+<div>
+    <video id="localVideo" autoplay muted></video>
+    <video id="remoteVideo" autoplay></video>
 </div>
 
-<div id="commentsSection">
-    <h3>💬 Comments</h3>
-    <p>This is the comment section. It opens on triple-tap left.</p>
+<div class="controls">
+    <button onclick="startCall()">Start Call</button>
+    <button onclick="stopCall()">Stop Call</button>
+    <button onclick="shareScreen()">Share Screen</button>
+    <button onclick="stopScreenShare()">Stop Screen Share</button>
+    <button onclick="startRecording()">Start Recording</button>
+    <button onclick="stopRecording()">Stop & Save Recording</button>
 </div>
 
 <script>
-const video = document.getElementById("videoPlayer");
-const overlay = document.getElementById("overlay");
-const comments = document.getElementById("commentsSection");
+let localStream;
+let screenStream;
+let mediaRecorder;
+let recordedChunks = [];
+const localVideo = document.getElementById("localVideo");
+const remoteVideo = document.getElementById("remoteVideo");
 
-let tapCount = 0;
-let tapTimer = null;
+// --- Start Video Call ---
+async function startCall() {
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+        localVideo.srcObject = localStream;
 
-// Gesture handler
-overlay.addEventListener("click", function(event){
-    const rect = overlay.getBoundingClientRect();
-    const x = event.clientX - rect.left; // X relative to video
-    const width = rect.width;
-    const y = event.clientY - rect.top; // Y relative to video
+        // Simulate remote video by cloning local stream
+        remoteVideo.srcObject = localStream;
 
-    tapCount++;
+        alert("Call started (local demo). Screen sharing & recording available!");
+    } catch (err) {
+        alert("Error accessing camera/microphone: " + err);
+    }
+}
 
-    if(tapTimer) clearTimeout(tapTimer);
+// --- Stop Call ---
+function stopCall() {
+    if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+    }
 
-    tapTimer = setTimeout(()=>{
-        // Determine tap type
-        if(tapCount === 1){
-            // Single tap center
-            if(x > width*0.33 && x < width*0.66){
-                if(video.paused) video.play();
-                else video.pause();
-            }
+    if (screenStream) {
+        screenStream.getTracks().forEach(track => track.stop());
+        screenStream = null;
+    }
+
+    localVideo.srcObject = null;
+    remoteVideo.srcObject = null;
+
+    alert("Call ended.");
+}
+
+// --- Share Screen ---
+async function shareScreen() {
+    try {
+        screenStream = await navigator.mediaDevices.getDisplayMedia({video: true});
+        remoteVideo.srcObject = screenStream;
+        alert("Screen sharing started. You can now show YouTube or any website.");
+    } catch (err) {
+        alert("Error sharing screen: " + err);
+    }
+}
+
+// --- Stop Screen Sharing ---
+function stopScreenShare() {
+    if (screenStream) {
+        screenStream.getTracks().forEach(track => track.stop());
+        screenStream = null;
+
+        // Revert remote video to camera if call is still active
+        if (localStream) {
+            remoteVideo.srcObject = localStream;
+        } else {
+            remoteVideo.srcObject = null;
         }
-        else if(tapCount === 2){
-            // Double tap left/right
-            if(x < width/2){
-                video.currentTime = Math.max(video.currentTime - 10, 0);
-            } else {
-                video.currentTime = Math.min(video.currentTime + 10, video.duration);
-            }
-        }
-        else if(tapCount === 3){
-            // Triple tap
-            if(x < width/3){
-                // Left → show comments
-                comments.style.display = comments.style.display === "none" ? "block" : "none";
-            } else if(x > width*2/3){
-                // Right → close window
-                alert("Closing website (simulate)");
-                // window.close(); // works only if window opened via JS
-            } else {
-                // Center → next video
-                video.currentTime = 0; // reset current video
-                alert("Skipped to next video (simulate)");
-            }
-        }
-        tapCount = 0;
-    }, 300); // 300ms threshold to detect multi-taps
-});
 
+        alert("Screen sharing stopped.");
+    } else {
+        alert("No screen sharing active.");
+    }
+}
+
+// --- Recording ---
+function startRecording() {
+    if (!localStream && !screenStream) {
+        alert("Start call or share screen first!");
+        return;
+    }
+    const streamToRecord = screenStream || localStream;
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(streamToRecord);
+    mediaRecorder.ondataavailable = e => {
+        if(e.data.size > 0) recordedChunks.push(e.data);
+    };
+    mediaRecorder.onstop = saveRecording;
+    mediaRecorder.start();
+    alert("Recording started!");
+}
+
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+        alert("Recording stopped and saved!");
+    }
+}
+
+function saveRecording() {
+    const blob = new Blob(recordedChunks, {type: "video/webm"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "video_call_recording.webm";
+    a.click();
+    URL.revokeObjectURL(url);
+}
 </script>
 
 </body>
