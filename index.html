@@ -1,167 +1,149 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-<title>Video Plan Upgrade</title>
-
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
+<meta charset="UTF-8">
+<title>Task 4 - Dynamic Theme & OTP</title>
 <style>
+    body {
+        font-family: Arial, sans-serif;
+        transition: all 0.5s ease;
+        padding: 20px;
+        text-align: center;
+    }
 
-body{
-font-family:Arial;
-background:#f0f0f0;
-padding:20px;
-text-align:center;
-}
+    h2 {
+        margin-bottom: 20px;
+    }
 
-.container{
-background:white;
-padding:20px;
-border-radius:10px;
-max-width:800px;
-margin:auto;
-}
+    .login-box {
+        background: rgba(255,255,255,0.1);
+        padding: 20px;
+        border-radius: 10px;
+        display: inline-block;
+    }
 
-.plan{
-border:1px solid #ddd;
-padding:15px;
-margin:10px;
-border-radius:10px;
-}
+    input, select, button {
+        padding: 10px;
+        margin: 10px 0;
+        width: 250px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
 
-button{
-padding:10px 20px;
-background:#007bff;
-color:white;
-border:none;
-border-radius:5px;
-cursor:pointer;
-}
+    button {
+        width: 270px;
+        cursor: pointer;
+        background: #007bff;
+        color: white;
+        border: none;
+    }
 
-button:hover{
-background:#0056b3;
-}
+    button:hover {
+        background: #0056b3;
+    }
 
-video{
-width:100%;
-margin-top:20px;
-}
-
+    #otpSection {
+        display: none;
+        margin-top: 20px;
+    }
 </style>
-
 </head>
-
 <body>
 
-<div class="container">
+<h2>🌐 Dynamic Theme & Regional OTP</h2>
 
-<h2>🎬 Video Platform</h2>
+<div class="login-box">
+    <label for="state">Select Your State:</label><br>
+    <select id="state">
+        <option value="">--Select State--</option>
+        <option value="Tamil Nadu">Tamil Nadu</option>
+        <option value="Kerala">Kerala</option>
+        <option value="Karnataka">Karnataka</option>
+        <option value="Andhra Pradesh">Andhra Pradesh</option>
+        <option value="Telangana">Telangana</option>
+        <option value="Maharashtra">Maharashtra</option>
+        <option value="Delhi">Delhi</option>
+        <option value="Other">Other</option>
+    </select><br>
 
-<h3>Current Plan: <span id="planName">Free</span></h3>
+    <label for="contact">Enter Email or Mobile:</label><br>
+    <input type="text" id="contact" placeholder="Email or Mobile"><br>
 
-<div class="plan">
-<h3>Free Plan</h3>
-<p>Watch videos for 5 minutes</p>
-</div>
+    <button onclick="login()">Login</button>
 
-<div class="plan">
-<h3>Bronze Plan - ₹10</h3>
-<p>Watch videos for 7 minutes</p>
-<button onclick="buyPlan('Bronze',10,7)">Upgrade</button>
-</div>
-
-<div class="plan">
-<h3>Silver Plan - ₹50</h3>
-<p>Watch videos for 10 minutes</p>
-<button onclick="buyPlan('Silver',50,10)">Upgrade</button>
-</div>
-
-<div class="plan">
-<h3>Gold Plan - ₹100</h3>
-<p>Unlimited watching</p>
-<button onclick="buyPlan('Gold',100,'unlimited')">Upgrade</button>
-</div>
-
-<h2>Watch Video</h2>
-
-<video id="videoPlayer" controls>
-
-<source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
-
-</video>
-
+    <div id="otpSection">
+        <input type="text" id="otpInput" placeholder="Enter OTP"><br>
+        <button onclick="verifyOTP()">Verify OTP</button>
+    </div>
 </div>
 
 <script>
+// Southern states list
+const southStates = ["Tamil Nadu", "Kerala", "Karnataka", "Andhra Pradesh", "Telangana"];
+let generatedOTP = "";
 
-let plan = localStorage.getItem("userPlan") || "Free"
-document.getElementById("planName").innerText = plan
+// --- Dynamic Theme ---
+function applyTheme() {
+    const state = document.getElementById("state").value;
+    const now = new Date();
 
-let limits = {
-"Free":5,
-"Bronze":7,
-"Silver":10,
-"Gold":"unlimited"
+    // IST offset = UTC+5:30 → convert user local time if needed
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+
+    const isSouth = southStates.includes(state);
+    const isMorning = (hours >= 10 && hours < 12);
+
+    if(isSouth && isMorning){
+        // Light theme
+        document.body.style.background = "white";
+        document.body.style.color = "black";
+    } else {
+        // Dark theme
+        document.body.style.background = "#111";
+        document.body.style.color = "white";
+    }
 }
 
-let video = document.getElementById("videoPlayer")
+// --- Login & OTP ---
+function login(){
+    const state = document.getElementById("state").value;
+    const contact = document.getElementById("contact").value.trim();
 
-video.addEventListener("timeupdate",function(){
+    if(state === "" || contact === ""){
+        alert("Please select state and enter email/mobile!");
+        return;
+    }
 
-let currentPlan = localStorage.getItem("userPlan") || "Free"
-let limit = limits[currentPlan]
+    applyTheme();
 
-if(limit !== "unlimited"){
+    // Generate 4-digit OTP
+    generatedOTP = Math.floor(1000 + Math.random() * 9000).toString();
 
-if(video.currentTime >= limit * 60){
+    if(southStates.includes(state)){
+        alert(`OTP sent to your EMAIL: ${generatedOTP}`);
+    } else {
+        alert(`OTP sent to your MOBILE: ${generatedOTP}`);
+    }
 
-video.pause()
-
-alert("Your watching limit is over. Upgrade your plan.")
-
+    document.getElementById("otpSection").style.display = "block";
 }
 
+// --- Verify OTP ---
+function verifyOTP(){
+    const userOTP = document.getElementById("otpInput").value.trim();
+    if(userOTP === generatedOTP){
+        alert("✅ Login successful!");
+        document.getElementById("otpSection").style.display = "none";
+    } else {
+        alert("❌ Incorrect OTP. Try again!");
+    }
 }
 
-})
-
-function buyPlan(planName,price,limit){
-
-var options = {
-
-"key":"rzp_test_123456789",
-
-"amount":price * 100,
-
-"currency":"INR",
-
-"name":"Video Platform",
-
-"description":planName + " Plan",
-
-handler:function(response){
-
-localStorage.setItem("userPlan",planName)
-
-alert("Payment Successful!")
-
-alert("Invoice sent to your email for "+planName+" Plan")
-
-location.reload()
-
-}
-
-}
-
-var rzp1 = new Razorpay(options)
-
-rzp1.open()
-
-}
+// Optional: Update theme if state changes before login
+document.getElementById("state").addEventListener("change", applyTheme);
 
 </script>
 
 </body>
-
 </html>
